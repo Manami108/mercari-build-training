@@ -43,7 +43,7 @@ def get_item_by_id(item_id: int):
     with open(get_items(), "r") as f:
         data = json.load(f)
     if not (0 <= item_id < len(data["items"])):
-        raise HTTPException(status_code=400, detail="Item not found")
+        raise HTTPException(status_code=404, detail="Item not found")
     return data["items"][item_id - 1]
 
 # Added new function
