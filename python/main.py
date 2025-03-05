@@ -4,7 +4,7 @@ import pathlib
 from fastapi import FastAPI, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-# import sqlite3
+import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import json 
@@ -23,21 +23,37 @@ def get_items():
             json.dump({"items": []}, f)
     return items
  
-# def get_db():
-#     if not db.exists():
-#         yield
+def get_db():
+    if not db.exists():
+        yield
 
-#     conn = sqlite3.connect(db)
-#     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
-#     try:
-#         yield conn
-#     finally:
-#         conn.close()
+    conn = sqlite3.connect(db)
+    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
+    try:
+        yield conn
+    finally:
+        conn.close()
     
 # STEP 5-1: set up the database connection
 def setup_database():
-    get_items()
+    pass
 
+# Added new function 
+def get_item_by_id(item_id: int):
+    with open(get_items(), "r") as f:
+        data = json.load(f)
+    if not (0 <= item_id < len(data["items"])):
+        raise HTTPException(status_code=400, detail="Item not found")
+    return data["items"][item_id - 1]
+
+# Added new function
+def upload_image(image: UploadFile):
+    image_data = image.file.read()
+    hashed_value = hashlib.sha256(image_data).hexdigest()
+    image_name = f"{hashed_value}.jpg"
+    with open(images/image_name, "wb") as image_file:
+        image_file.write(image_data)
+    return image_name
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -83,37 +99,21 @@ def add_item(
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
-    
-    image_name = None
-    
-    if image:
-        image_data = image.file.read()
-        hashed_value = hashlib.sha256(image_data).hexdigest() 
-        image_name = f"{hashed_value}.jpg"
-        
-        with open(images / image_name, "wb") as img_file:
-            img_file.write(image_data)
-    
+    image_name = upload_image(image) if image else None
     item = Item(name=name, category=category, image_name=image_name)
     insert_item(item)
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    return {"message": f"item received: {name}"}
 
-# item endpoint
 @app.get("/items")
-def get_items_data():
+def get_all_items():
     with open(get_items(), "r") as f:
         return json.load(f)
-
+    
 # info endpoint
 @app.get("/items/{item_id}")
 def get_item_info(item_id: int):
-    with open(get_items(), "r") as f:
-        data = json.load(f)
-        
-    if item_id > len(data["items"]) or item_id <= 0:
-        raise HTTPException(status_code=400, detail="Item not found")
-    
-    return data["items"][item_id -1]
+    return get_item_by_id(item_id)
+
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
@@ -134,13 +134,13 @@ async def get_image(image_name):
 class Item(BaseModel):
     name: str
     category: str
-    image_name: str = None
+    image_name: str | None = None
 
 
 def insert_item(item: Item):
     with open(items, "r") as f:
         data = json.load(f)
 
-    data["items"].append({"name": item.name, "category": item.category, "image": item.image_name})
+    data["items"].append(item.model_dump())
     with open(items, "w") as f:
         json.dump(data, f, indent=4)
