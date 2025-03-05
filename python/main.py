@@ -95,15 +95,16 @@ def add_item(
     name: str = Form(...),
     category: str = Form(...),
     # db: sqlite3.Connection = Depends(get_db),
-    image: UploadFile = None
+    image: UploadFile = Form(...)
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
-    if image and not image.filename.endswith(".jpg"):
-        raise HTTPException(status_code=400, detail="image path does not end with .jpg")
-    image_name = upload_image(image) if image else None
+    if not image:
+        raise HTTPException(status_code=400, detail="image is required")
+    
+    image_name = upload_image(image)
     item = Item(name=name, category=category, image_name=image_name)
     insert_item(item)
     return {"message": f"item received: {name}"}
