@@ -41,9 +41,17 @@ def setup_database():
                      CREATE TABLE IF NOT EXISTS items (
                          id INTEGER PRIMARY KEY AUTOINCREMENT,
                          name TEXT NOT NULL,
-                         category TEXT NOT NULL,
-                         image_name TEXT NOT NULL
+                         category_id INTEGER NOT NULL,
+                         image_name TEXT NOT NULL,
+                         FOREIGN KEY (category_id) REFERENCES categories(id)
                          
+                     );
+        """)
+        
+        conn.execute("""
+                     CREATE TABLE IF NOT EXISTS categories(
+                         id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         name TEXT NOT NULL 
                      );
         """)
         conn.commit()
@@ -136,9 +144,10 @@ def get_all_items():
     #     return json.load(f)
     with sqlite3.connect(db) as conn:
         conn.row_factory = sqlite3.Row
-        rows = conn.execute(
-            "SELECT id, name, category, image_name FROM items"
-        ).fetchall()
+        rows = conn.execute("""
+            SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
+            JOIN categories ON items.category_id = categories.id;
+        """).fetchall()
     
     items_data = [dict(row) for row in rows]
     return {"items": items_data}
@@ -148,8 +157,15 @@ def get_all_items():
 @app.get("/items/{item_id}")
 def get_item_info(item_id: int):
     # return get_item_by_id(item_id)
-    return get_item_by_id(item_id)
-    
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("""
+                           SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
+                           JOIN categories ON items.category_id = categories.id WHERE items.id= ?;
+                           """, (item_id,)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail= "Item not found")
+        return dict(row)    
     
 
 
@@ -183,9 +199,17 @@ def insert_item(item: Item):
     # with open(items, "w") as f:
     #     json.dump(data, f, indent=4)
     with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        
+        conn.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (item.category,))
+        conn.commit()
+        
+        cursor = conn.execute("SELECT id FROM categories WHERE name = ?", (item.category,))
+        category_id = cursor.fetchone()["id"]
+        
         conn.execute(
-            "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-            (item.name, item.category, item.image_name)
+            "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+            (item.name, category_id, item.image_name)
         )
         conn.commit()
 
@@ -195,7 +219,7 @@ def search_items(keyword:str):
     with sqlite3.connect(db) as conn:
         conn.row_factory=sqlite3.Row
         rows = conn.execute(
-            "SELECT id, name, category, image_name FROM items WHERE name LIKE ?",
+            "SELECT items.id, items.name, categories.name AS category, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?",
             (f"%{keyword}%",)
         ).fetchall()
         items_data = [dict(row) for row in rows]
