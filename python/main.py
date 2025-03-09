@@ -14,14 +14,14 @@ import hashlib
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-items = pathlib.Path(__file__).parent.resolve() / "items.json" 
+# items = pathlib.Path(__file__).parent.resolve() / "items.json" 
 
-def get_items():
-    if not items.exists():
-        with open(items, "w") as f:
-            items.parent.mkdir(parents=True, exist_ok=True)
-            json.dump({"items": []}, f)
-    return items
+# def get_items():
+#     if not items.exists():
+#         with open(items, "w") as f:
+#             items.parent.mkdir(parents=True, exist_ok=True)
+#             json.dump({"items": []}, f)
+#     return items
  
 def get_db():
     if not db.exists():
@@ -72,7 +72,6 @@ def get_item_by_id(item_id: int):
         ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Item not found")
-    
     return dict(row)
 
 # Added new function
@@ -83,6 +82,7 @@ def upload_image(image: UploadFile):
     with open(images/image_name, "wb") as image_file:
         image_file.write(image_data)
     return image_name
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -117,7 +117,68 @@ def hello():
 
 class AddItemResponse(BaseModel):
     message: str
+    
 
+class Item(BaseModel):
+    name: str
+    category: str
+    image_name: str 
+
+
+
+def insert_item(item: Item):
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        
+        conn.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (item.category,))
+        conn.commit()
+
+        cursor = conn.execute("SELECT id FROM categories WHERE name = ?", (item.category,))
+        category_id = cursor.fetchone()["id"]
+
+        conn.execute(
+            "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+            (item.name, category_id, item.image_name)
+        )
+        conn.commit()
+        
+   
+        
+def fetch_all_items():
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("""
+                            SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
+                            JOIN categories ON items.category_id = categories.id;
+        """).fetchall()
+        
+    return [dict(row) for row in rows]
+
+def fetch_item_by_id(item_id: int):
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("""
+                           SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
+                           JOIN categories ON items.category_id = categories.id WHERE items.id = ?;
+        """, (item_id,)).fetchone()
+    
+    if row is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    return dict(row)
+
+
+
+def search_items_in_db(keyword: str):
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("""
+                            SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
+                            JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?;
+        """, (f"%{keyword}%",)).fetchall()
+        
+    return [dict(r) for r in rows]
+        
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
@@ -139,34 +200,23 @@ def add_item(
     return {"message": f"item received: {name}"}
 
 @app.get("/items")
+
+
+# MVC model
+@app.get("/items")
 def get_all_items():
-    # with open(get_items(), "r") as f:
-    #     return json.load(f)
-    with sqlite3.connect(db) as conn:
-        conn.row_factory = sqlite3.Row
-        rows = conn.execute("""
-            SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
-            JOIN categories ON items.category_id = categories.id;
-        """).fetchall()
-    
-    items_data = [dict(row) for row in rows]
+    items_data = fetch_all_items()  
     return {"items": items_data}
-    
-    
-# info endpoint
+
 @app.get("/items/{item_id}")
 def get_item_info(item_id: int):
-    # return get_item_by_id(item_id)
-    with sqlite3.connect(db) as conn:
-        conn.row_factory = sqlite3.Row
-        row = conn.execute("""
-                           SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
-                           JOIN categories ON items.category_id = categories.id WHERE items.id= ?;
-                           """, (item_id,)).fetchone()
-        if row is None:
-            raise HTTPException(status_code=404, detail= "Item not found")
-        return dict(row)    
-    
+    item_data = fetch_item_by_id(item_id)  
+    return item_data
+
+@app.get("/search")
+def search_items(keyword: str):
+    items_data = search_items_in_db(keyword) 
+    return {"items": items_data}
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -184,38 +234,3 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
-
-class Item(BaseModel):
-    name: str
-    category: str
-    image_name: str 
-
-
-def insert_item(item: Item):
-    with sqlite3.connect(db) as conn:
-        conn.row_factory = sqlite3.Row 
-
-        conn.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (item.category,))
-        conn.commit()
-
-        cursor = conn.execute("SELECT id FROM categories WHERE name = ?", (item.category,))
-        category_id = cursor.fetchone()["id"]  
-        
-        conn.execute(
-            "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
-            (item.name, category_id, item.image_name)
-        )
-        conn.commit()
-
-
-# Step5-2 search function
-@app.get("/search")
-def search_items(keyword:str):
-    with sqlite3.connect(db) as conn:
-        conn.row_factory=sqlite3.Row
-        rows = conn.execute(
-            "SELECT items.id, items.name, categories.name AS category, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?",
-            (f"%{keyword}%",)
-        ).fetchall()
-        items_data = [dict(row) for row in rows]
-        return {"items": items_data}
