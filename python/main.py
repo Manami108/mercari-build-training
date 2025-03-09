@@ -56,24 +56,6 @@ def setup_database():
         """)
         conn.commit()
 
-# Added new function 
-def get_item_by_id(item_id: int):
-    # with open(get_items(), "r") as f:
-    #     data = json.load(f)
-    # if not (0 <= item_id < len(data["items"])):
-    #     raise HTTPException(status_code=404, detail="Item not found")
-    # return data["items"][item_id - 1]
-    
-    with sqlite3.connect(db) as conn:
-        conn.row_factory =sqlite3.Row
-        row = conn.execute(
-            "SELECT id, name, category, image_name FROM items WHERE id=?",
-            (item_id,)
-        ).fetchone()
-    if row is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return dict(row)
-
 # Added new function
 def upload_image(image: UploadFile):
     image_data = image.file.read()
