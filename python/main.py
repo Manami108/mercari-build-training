@@ -108,35 +108,38 @@ class Item(BaseModel):
 
 
 
-def insert_item(item: Item, conn: sqlite3.Connection):
-    conn.row_factory = sqlite3.Row
+def insert_item(item: Item):
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
         
-    conn.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (item.category,))
-    conn.commit()
+        conn.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (item.category,))
+        conn.commit()
 
-    cursor = conn.execute("SELECT id FROM categories WHERE name = ?", (item.category,))
-    category_id = cursor.fetchone()["id"]
+        cursor = conn.execute("SELECT id FROM categories WHERE name = ?", (item.category,))
+        category_id = cursor.fetchone()["id"]
 
-    conn.execute(
+        conn.execute(
             "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
             (item.name, category_id, item.image_name)
-    )
-    conn.commit()
+        )
+        conn.commit()
         
    
         
-def fetch_all_items(conn: sqlite3.Connection):
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute("""
+def fetch_all_items():
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("""
                             SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
                             JOIN categories ON items.category_id = categories.id;
         """).fetchall()
         
     return [dict(row) for row in rows]
 
-def fetch_item_by_id(conn: sqlite3.Connection, item_id: int):
-    conn.row_factory = sqlite3.Row
-    row = conn.execute("""
+def fetch_item_by_id(item_id: int):
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("""
                            SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
                            JOIN categories ON items.category_id = categories.id WHERE items.id = ?;
         """, (item_id,)).fetchone()
@@ -148,9 +151,10 @@ def fetch_item_by_id(conn: sqlite3.Connection, item_id: int):
 
 
 
-def search_items_in_db(conn: sqlite3.Connection, keyword: str):
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute("""
+def search_items_in_db(keyword: str):
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("""
                             SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
                             JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?;
         """, (f"%{keyword}%",)).fetchall()
@@ -162,8 +166,8 @@ def search_items_in_db(conn: sqlite3.Connection, keyword: str):
 def add_item(
     name: str = Form(...),
     category: str = Form(...),
-    image: UploadFile = Form(...),
-    conn: sqlite3.Connection = Depends(get_db)
+    db: sqlite3.Connection = Depends(get_db),
+    image: UploadFile = Form(...)
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
@@ -174,7 +178,7 @@ def add_item(
     
     image_name = upload_image(image)
     item = Item(name=name, category=category, image_name=image_name)
-    insert_item(item,conn)
+    insert_item(item)
     return {"message": f"item received: {name}"}
 
 @app.get("/items")
