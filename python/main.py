@@ -177,7 +177,6 @@ def add_item(
     insert_item(item,conn)
     return {"message": f"item received: {name}"}
 
-
 # MVC model
 @app.get("/items")
 def get_all_items():
