@@ -177,8 +177,6 @@ def add_item(
     insert_item(item,conn)
     return {"message": f"item received: {name}"}
 
-@app.get("/items")
-
 
 # MVC model
 @app.get("/items")
@@ -212,3 +210,6 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=9000, reload=True)
