@@ -23,9 +23,8 @@ db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 #             json.dump({"items": []}, f)
 #     return items
  
+ 
 def get_db():
-    if not db.exists():
-        yield
 
     conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
@@ -33,6 +32,8 @@ def get_db():
         yield conn
     finally:
         conn.close()
+        
+        
     
 # STEP 5-1: set up the database connection
 def setup_database():
@@ -74,18 +75,30 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+origins = [
+    "http://localhost:3000",  # Allow frontend to access backend
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows frontend to call the API
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
 logger = logging.getLogger("uvicorn")
 # optional
 logger.setLevel(logging.DEBUG)
 images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=False,
+#     allow_methods=["GET", "POST", "PUT", "DELETE"],
+#     allow_headers=["*"],
+# )
 
 
 class HelloResponse(BaseModel):
@@ -179,9 +192,10 @@ def add_item(
 
 # MVC model
 @app.get("/items")
-def get_all_items():
-    items_data = fetch_all_items()  
+def get_all_items(conn: sqlite3.Connection = Depends(get_db)):  # ✅ Get DB connection
+    items_data = fetch_all_items(conn)  # ✅ Pass 'conn' argument
     return {"items": items_data}
+
 
 @app.get("/items/{item_id}")
 def get_item_info(item_id: int):

@@ -1,5 +1,6 @@
 FROM python:3.9.16-alpine
 
+RUN pip install fastapi pydantic uvicorn
 RUN apk update && apk add --no-cache gcc musl-dev
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 
