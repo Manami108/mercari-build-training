@@ -27,12 +27,14 @@ export const Listing = ({ onListingCompleted }: Prop) => {
       [event.target.name]: event.target.value,
     });
   };
+
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues({
       ...values,
       [event.target.name]: event.target.files![0],
     });
   };
+
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -47,27 +49,33 @@ export const Listing = ({ onListingCompleted }: Prop) => {
       return;
     }
 
-    // Submit the form
-    postItem({
-      name: values.name,
-      category: values.category,
-      image: values.image,
+    // Submit the form using FormData
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("category", values.category);
+    formData.append("image", values.image); // Ensure this is a File object
+
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/items`, {
+      method: "POST",
+      body: formData,
     })
+      .then((res) => res.json())
       .then(() => {
         alert('Item listed successfully');
+        onListingCompleted();
       })
       .catch((error) => {
         console.error('POST error:', error);
         alert('Failed to list this item');
       })
       .finally(() => {
-        onListingCompleted();
         setValues(initialState);
         if (uploadImageRef.current) {
           uploadImageRef.current.value = '';
         }
       });
   };
+
   return (
     <div className="Listing">
       <form onSubmit={onSubmit}>
