@@ -19,7 +19,11 @@ export const ItemList = ({ reload, searchQuery, sortOrder, onLoadCompleted }: Pr
           console.debug('GET success:', data);
           let sortedItems = data.items || [];
 
-          // ✅ Sort by latest or oldest
+          sortedItems = sortedItems.map((item: Item) => ({
+            ...item,
+            timestamp: item.timestamp || new Date().toISOString(), 
+          }));
+
           sortedItems.sort((a: Item, b: Item) => {
             const dateA = new Date(a.timestamp).getTime();
             const dateB = new Date(b.timestamp).getTime();
@@ -34,12 +38,11 @@ export const ItemList = ({ reload, searchQuery, sortOrder, onLoadCompleted }: Pr
         });
     };
 
-    if (reload || sortOrder) {
+    if (reload || sortOrder || searchQuery) {
       fetchData();
     }
-  }, [reload, onLoadCompleted, sortOrder]);
+  }, [reload, sortOrder, searchQuery, onLoadCompleted]);
 
-  // 🔍 Filter items based on search query
   const filteredItems = items.filter(
     (item) =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,7 +57,7 @@ export const ItemList = ({ reload, searchQuery, sortOrder, onLoadCompleted }: Pr
           className="ItemList"
           onClick={() => setSelectedItem(item)}
         >
-          <img src={item.image_url || "/logo192.png"} alt={item.name || "Item"} />
+          <img src={item.image_url || "/logo192.png"} alt={item.name || "Item"} className="ItemImage" />
           <p><span>{item.name || "Unknown"}</span></p>
         </div>
       ))}
@@ -72,7 +75,5 @@ export const ItemList = ({ reload, searchQuery, sortOrder, onLoadCompleted }: Pr
         </div>
       )}
     </div>
-
-    
   );
 };

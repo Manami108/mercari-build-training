@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  backend:
+    image: mercari-build-training/app:latest  # Use the API image from STEP7
+    ports:
+      - "9000:9000"
+    environment:
+      - FRONT_URL=http://localhost:3000
+    networks:
+      - mercari-network
+
+  frontend:
+    image: mercari-build-training/web:latest  # Use the frontend image from STEP10-1
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:9000  # API URL
+    depends_on:
+      - backend
+    networks:
+      - mercari-network
+
+networks:
+  mercari-network:
+    driver: bridge
