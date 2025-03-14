@@ -1,49 +1,327 @@
+/* General App Styling */
 .App {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  padding-top: 12vh;
+  min-height: 100vh;
+}
+
+/* Full-width Fixed Header */
+.Title {
+  background-color: #ff3b30;
+  width: 100vw;
+  height: 10vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(14px + 1vmin);
+  color: white;
+  font-weight: bold;
+  border-bottom: 8px solid #007bff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+
+/* Navigation Buttons */
+.NavButtons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 15px 0;
+  position: fixed;
+  top: 10vh;
+  left: 0;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 10px 0;
+  z-index: 999;
+  border-bottom: 2px solid #ddd;
+}
+
+.NavButtons button {
+  background-color: #ff3b30;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.NavButtons button:hover {
+  background-color: #d6281e;
+}
+
+/* Layout Adjustments */
+.Content {
+  margin-top: 18vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+/* Listing Component (Centered, No Box) */
+.Listing {
+  background-color: transparent;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  margin: 20px auto;
+}
+
+/* Ensure the form is centered */
+.Listing form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+}
+
+/* Input fields */
+.Listing input {
+  margin: 10px 0;
+  padding: 10px;
+  width: 80%;
+  border-radius: 5px;
+  border: 2px solid #ff3b30;
+  background-color: rgba(255, 255, 255, 0.1);
+  font-size: 16px;
+  color: black;
+}
+
+.Listing input::placeholder {
+  color: gray;
+}
+
+/* Button */
+.Listing button {
+  background-color: #ff3b30;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.Listing button:hover {
+  background-color: #d6281e;
+}
+/* 🛠 Fix the Grid Layout */
+.ItemListContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Adjusts to fit screen */
+  gap: 20px;
+  padding: 20px;
+  max-width: 95%;
+  margin: 0 auto;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 🛠 Ensure items are properly centered */
+.ItemList {
+  background-color: transparent;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
-.Title {
-  background-color: #222427;
-  min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+/* 🛠 Fix Text Visibility */
+/* Fix ItemList Text Color */
+.ItemList p {
+  font-size: 14px;
+  color: black;  /* 🔥 Changed to black for visibility */
+  text-align: center;
 }
 
-.Listing {
-  background-color: #222427;
-  min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+.ItemList span {
+  font-weight: bold;
+  color: black;  /* 🔥 Ensure category & name are readable */
 }
 
+/* 🛠 Fix image size to unify & shrink them */
+.ItemList img {
+  width: 120px; /* ✅ Set fixed width */
+  height: 120px; /* ✅ Set fixed height */
+  object-fit: cover; /* ✅ Prevent distortion & crop if needed */
+  border-radius: 10px;
+  margin-bottom: 10px;
+  border: 3px solid black;
+}
+
+/* 🏠 Home Page Text Styling */
+.HomeContent {
+  text-align: center;
+  color: black;
+  padding: 40px;
+}
+
+.HomeContent h2 {
+  font-size: 80px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.HomeContent p {
+  font-size: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+/* 🔍 Search Bar */
+.SearchBar {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 2px solid #ff3b30;
+  outline: none;
+  width: 250px;
+  margin-left: 10px;
+}
+
+.SearchBar::placeholder {
+  color: gray;
+}
+
+.SearchBar:focus {
+  border-color: #007bff;
+}
+
+/* 🛠 Make Items Clickable */
 .ItemList {
-  background-color: #222427;
-  min-height: 8vh;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.ItemList:hover {
+  transform: scale(1.05);
+}
+
+/* 🛠 Modal Styling */
+.ModalBackground {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
+  z-index: 1000;
+}
+
+.ModalContent {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  min-width: 300px;
+  max-width: 400px;
+}
+
+/* 🛠 Modal Image */
+.ModalImage {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.ModalContent h2 {
+  color: black;
+  margin-bottom: 10px;
+}
+
+.ModalContent p {
+  color: black;
+  font-size: 16px;
+}
+
+.ModalContent button {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: none;
+  background-color: #ff3b30;
   color: white;
+  cursor: pointer;
+  border-radius: 5px;
 }
 
-.App-link {
-  color: #61dafb;
+.ModalContent button:hover {
+  background-color: #d6281e;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Dropdown Container */
+.DropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+/* Dropdown Menu */
+.DropdownMenu {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  min-width: 160px;
+  z-index: 1000;
+  right: 0;
+  top: 40px;
+  color: black;
+}
+
+.DropdownMenu button {
+  background: none;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  color: black;
+}
+
+.DropdownMenu button:hover {
+  background-color: #f5f5f5;
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .ItemListContainer {
+    grid-template-columns: repeat(6, 1fr);
   }
-  to {
-    transform: rotate(360deg);
+}
+
+@media (max-width: 900px) {
+  .ItemListContainer {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .ItemListContainer {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
