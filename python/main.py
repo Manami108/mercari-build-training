@@ -142,9 +142,8 @@ def insert_item(item: Item, conn: sqlite3.Connection):
     cursor = conn.execute("SELECT id FROM categories WHERE name = ?", (item.category,))
     category_id = cursor.fetchone()["id"]
 
-    # ✅ Convert to Japan Standard Time (JST)
     jst = pytz.timezone('Asia/Tokyo')
-    timestamp = datetime.now(jst).strftime('%Y-%m-%d %H:%M:%S')  # ✅ Store in JST format
+    timestamp = datetime.now(jst).strftime('%Y-%m-%d %H:%M:%S') 
 
     conn.execute(
         "INSERT INTO items (name, category_id, image_name, timestamp) VALUES (?, ?, ?, ?)",
