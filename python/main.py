@@ -176,14 +176,17 @@ def fetch_all_items(conn: sqlite3.Connection):
 def fetch_item_by_id(conn: sqlite3.Connection, item_id: int):
     conn.row_factory = sqlite3.Row
     row = conn.execute("""
-                           SELECT items.id, items.name, categories.name AS category, items.image_name FROM items
+                           SELECT items.id, items.name, categories.name AS category, items.image_name, items.timestamp FROM items
                            JOIN categories ON items.category_id = categories.id WHERE items.id = ?;
         """, (item_id,)).fetchone()
     
     if row is None:
         raise HTTPException(status_code=404, detail="Item not found")
-    
-    return dict(row)
+
+    backend_url = os.environ.get("BACKEND_URL", "http://localhost:9000")
+    item = dict(row)
+    item["image_url"] = f"{backend_url}/image/{item['image_name']}" if item["image_name"] else None
+    return item
 
 
 
@@ -225,9 +228,10 @@ def get_all_items(conn: sqlite3.Connection = Depends(get_db)):
 
 
 @app.get("/items/{item_id}")
-def get_item_info(item_id: int):
-    item_data = fetch_item_by_id(item_id)  
+def get_item_info(item_id: int, conn: sqlite3.Connection = Depends(get_db)):
+    item_data = fetch_item_by_id(conn, item_id)  
     return item_data
+
 
 @app.get("/search")
 def search_items(keyword: str):
